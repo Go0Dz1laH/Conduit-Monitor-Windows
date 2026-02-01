@@ -1,9 +1,10 @@
 name: Build and Release EXE
 
 on:
+  workflow_dispatch: # اجازه اجرای دستی از تب Actions را می‌دهد
   push:
     tags:
-      - 'v*' 
+      - 'v*' # با زدن تگی مثل v1.0.0 اجرا می‌شود
 
 permissions:
   contents: write
@@ -25,7 +26,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if (Test-Path requirements.txt) { pip install -r requirements.txt }
-        pip install pyinstaller # اطمینان از نصب بودن کتابخانه بیلد
+        pip install pyinstaller
 
     - name: Build EXE using winbuilder
       run: |
@@ -34,31 +35,28 @@ jobs:
     - name: Check for EXE
       shell: pwsh
       run: |
+        # این بخش چک می‌کند که آیا فایل واقعاً ساخته شده یا نه
         if (!(Test-Path "dist/Conduit-Manager-Windows.exe")) {
-          Write-Error "فایل EXE در مسیر dist پیدا نشد. نام خروجی در winbuilder.py را چک کن."
+          Write-Error "Error: dist/Conduit-Manager-Windows.exe not found!"
           exit 1
         }
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
       with:
         files: dist/Conduit-Manager-Windows.exe
-        name: Release ${{ github.ref_name }}
-        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name || 'Manual Build' }}
+        tag_name: ${{ github.ref_name || 'manual-build' }}
         draft: false
         prerelease: false
         body: |
-          ## 🚀 New Update: ${{ github.ref_name }}
+          ## 🚀 Automated Build
           
-          **Conduit Manager CLI** - Automated Build for Windows
+          **Conduit Manager CLI** - Windows Standalone Executable
           
-          ### 📋 Changelog
-          - Latest updates applied.
-          - Automatic executable build via GitHub Actions.
+          ### 📋 Information
+          - Built via GitHub Actions.
+          - Runtime: Windows Latest.
           
           ### ⚠️ Note
-          This tool requires **Administrator Privileges** to run properly (for Packet Monitoring).
-          
-          ### 🛡 VirusTotal Check
-          You can upload `Conduit-Manager-Windows.exe` to VirusTotal to verify its safety.
+          This tool requires **Administrator Privileges** for Packet Monitoring features.
